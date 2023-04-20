@@ -1,0 +1,120 @@
+import React,{useState,useEffect} from 'react'
+import {useLocation,useNavigate} from 'react-router-dom'
+import {fetchTest} from "./dataFetching"
+import "../index.css"
+
+function QuestionList() {
+   
+    const num = JSON.parse( localStorage.getItem("pageNumber")) || 0
+
+    const location = useLocation()
+    let index = location.state.index
+    let navigate = useNavigate()
+    // const testId = useParams()
+    const [test,setTest]=useState() 
+    const [pageNumber,setPageNumber]  = useState(num)
+    const [RadioSelected,setRadioSelected] = useState() 
+    const [CheckBoxSelected,setCheckBoxSelected] = useState([])
+
+    // const [currQues, setcurrQues] = useState()
+    const questionPerPage = 1
+    const pagesVisited = pageNumber * questionPerPage
+
+    
+    
+    useEffect(() => {
+
+        const fetchTests = async() => {
+            const data = await fetchTest(index)
+            setTest(data)
+            localStorage.setItem("pageNumber" ,num)
+        }
+        fetchTests()
+        
+    }, [index],[num])
+    
+    
+    const chagneOption = (e) =>
+    {
+        if(test.questions[pageNumber].type==="Multiple-Response")
+            setCheckBoxSelected([...CheckBoxSelected,e.target.value]);
+        else
+            setRadioSelected(e.target.value);
+    }
+    // console.log(RadioSelected,CheckBoxSelected)
+    
+    const previousPage = () =>
+    {
+        localStorage.setItem("pageNumber" ,pageNumber-1)
+        setPageNumber(pageNumber-1)
+    }
+    
+    const nextPage = () =>
+    {
+        localStorage.setItem("pageNumber" ,pageNumber+1)
+        setPageNumber(pageNumber+1)
+        // console.log(test.questions[pageNumber]._id);
+        navigate(`../questionList/${test._id}/${test.questions[pageNumber+1]._id}`, { state: { index } })
+    }
+
+    const submitTest = () =>
+    {
+        let result=window.confirm("Do you want to submit the test?")
+        if(result)
+            console.log("hi")
+    }
+
+    return (
+
+        <>
+            {test ? 
+            (
+                <div> 
+                    {test.questions.slice(pagesVisited,pagesVisited + questionPerPage).map((question,ind) =>
+                        <div className="container" key={question._id}>
+                            <div className="row">
+                                <h1>My Interview Portal</h1>
+            
+                                <div className="col-md-12">
+                                    <div className="panel panel-default">
+                                    <div className="panel-heading">{test.name}</div>
+                                        <div className="panel-body">
+                                    <form>
+                                        <label>{pageNumber+1}  {question.questionText}</label>
+
+                                        {question.options.map((option) =>
+                                        <div className="radio" key={option}>
+                                            <label>
+                                                <input 
+                                                type={typeof question.correctOptionIndex === "object" ? "checkbox": "radio"}  
+                                                name="option1" value={option} onChange={chagneOption} 
+                                                />{option}<br/>
+                                            </label>
+                                            
+                                        </div>
+                                        )}
+                                    </form>
+                                </div>
+                            
+                                <div className="panel-footer">
+                                    <button type="button" className="btn btn-success" onClick={previousPage} disabled={pageNumber===0 ? true : false}> Previous </button> &nbsp;&nbsp;
+                                    <button type="button" className="btn btn-success" onClick={nextPage} disabled={pageNumber===test.questions.length-1 ? true : false}> Next </button>
+                                    
+                                    <button type="button" className="pull-right btn btn-danger" onClick={submitTest}>
+                                        {pageNumber===test.questions.length-1 ? "Submit" : "Finish"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>)}
+            </div>)
+             
+            : 
+            (<div></div>)}
+        </>)
+}
+
+
+export default QuestionList
+
